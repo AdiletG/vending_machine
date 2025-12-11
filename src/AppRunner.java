@@ -10,11 +10,11 @@ public class AppRunner {
 
     private final UniversalArray<Product> products = new UniversalArrayImpl<>();
 
-    private final CoinAcceptor coinAcceptor;
-    private final CashAcceptor cashAcceptor;
+    private final CoinAcceptor coinAcceptor = new CoinAcceptor(100);
+    private final CashAcceptor cashAcceptor = new CashAcceptor(100);
+    private PaymentAcceptor paymentAcceptor;
 
     private static boolean isExit = false;
-    private int payment;
     private AppRunner() {
         products.addAll(new Product[]{
                 new Water(ActionLetter.B, 20),
@@ -24,8 +24,6 @@ public class AppRunner {
                 new Mars(ActionLetter.F, 80),
                 new Pistachios(ActionLetter.G, 130)
         });
-        coinAcceptor = new CoinAcceptor(100);
-        cashAcceptor = new CashAcceptor(100);
     }
 
     public static void run() {
@@ -39,50 +37,43 @@ public class AppRunner {
         print("В автомате доступны:");
         showProducts(products);
 
-        changePayment(changePaymentMenu());
-
+        choosePaymentMethod();
+        print("Баланс: " + paymentAcceptor.getBalance());
         UniversalArray<Product> allowProducts = new UniversalArrayImpl<>();
         allowProducts.addAll(getAllowedProducts().toArray());
         chooseAction(allowProducts);
 
     }
 
-    private int changePaymentMenu(){
+    private void choosePaymentMethod(){
         print("Выберите способ оплаты");
-        print(" 1 - Оплата монетами\n" +
-                " 2 - Оплата наличными(купюрами)");
+        print(" 1 - Монеты");
+        print(" 2 - Купюры");
+
         while (true){
             try {
-                payment = new Scanner(System.in).nextInt();
+                int select = new Scanner(System.in).nextInt();
 
-                if(payment < 0 || payment > 2){
-                    System.out.println("Просьба выбрать способ оплаты!");
+                if(select == 1){
+                    paymentAcceptor = coinAcceptor;
+                } else if (select == 2) {
+                    paymentAcceptor = cashAcceptor;
+                }else {
+                    print("Просьба выбрать способ оплаты! 1 или 2");
                     continue;
                 }
-                return payment;
+                return;
             }catch (InputMismatchException n){
-                n.getMessage();
-                System.out.println("Просьба выбрать способ оплаты!");
+                print("Ошибка: введите число 1 или 2");
             }
         }
     }
 
-    private void changePayment(int payment){
-        switch (payment){
-            case 1:
-                print("Монет на сумму: " + coinAcceptor.getAmount());
-                break;
-            case 2:
-            default:
-                print("Купюр на сумму: " + cashAcceptor.getCash());
-                break;
-        }
-    }
 
     private UniversalArray<Product> getAllowedProducts() {
         UniversalArray<Product> allowProducts = new UniversalArrayImpl<>();
         for (int i = 0; i < products.size(); i++) {
-            if (coinAcceptor.getAmount() >= products.get(i).getPrice()) {
+            if (paymentAcceptor.getBalance() >= products.get(i).getPrice()) {
                 allowProducts.add(products.get(i));
             }
         }
@@ -98,24 +89,14 @@ public class AppRunner {
         try {
             for (int i = 0; i < products.size(); i++) {
                 if (products.get(i).getActionLetter().equals(ActionLetter.valueOf(action.toUpperCase()))) {
-                    if(payment == 1){
-                        coinAcceptor.setAmount(coinAcceptor.getAmount() - products.get(i).getPrice());
-                    }else {
-                        cashAcceptor.setCash(cashAcceptor.getCash() - products.get(i).getPrice());
-                    }
-                    payment = 0;
+                    paymentAcceptor.withdraw(products.get(i).getPrice());
                     print("Вы купили " + products.get(i).getName());
                     break;
                 } else if ("h".equalsIgnoreCase(action)) {
                     isExit = true;
                     break;
                 } else if ("a".equalsIgnoreCase(action)) {
-                    if(payment == 1){
-                        coinReplenishment();
-                    }else {
-                        cashReplenishment();
-                    }
-
+                    refillBalance();
                     break;
                 }
             }
@@ -143,7 +124,8 @@ public class AppRunner {
         }
     }
 
-    private void coinReplenishment(){
+
+    private void refillBalance(){
         print("Просьба ввести сумму монет которую хотите пополнить: ");
 
         while (true){
@@ -154,28 +136,7 @@ public class AppRunner {
                     System.out.println("Ошибка сумма не может быть меньше чем 0!");
                     continue;
                 }
-                coinAcceptor.setAmount(coinAcceptor.getAmount() + actionSum);
-                break;
-            }catch (InputMismatchException n){
-                n.getMessage();
-                System.out.println("Просьба ввести сумму: ");
-            }
-        }
-
-    }
-
-    private void cashReplenishment(){
-        print("Просьба ввести сумму монет которую хотите пополнить: ");
-
-        while (true){
-            try {
-                int actionSum = new Scanner(System.in).nextInt();
-
-                if(actionSum < 0){
-                    System.out.println("Ошибка сумма не может быть меньше чем 0!");
-                    continue;
-                }
-                cashAcceptor.setCash(cashAcceptor.getCash() + actionSum);
+                paymentAcceptor.deposit(actionSum);
                 break;
             }catch (InputMismatchException n){
                 n.getMessage();
