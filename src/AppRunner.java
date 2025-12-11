@@ -11,9 +11,10 @@ public class AppRunner {
     private final UniversalArray<Product> products = new UniversalArrayImpl<>();
 
     private final CoinAcceptor coinAcceptor;
+    private final CashAcceptor cashAcceptor;
 
     private static boolean isExit = false;
-
+    private int payment;
     private AppRunner() {
         products.addAll(new Product[]{
                 new Water(ActionLetter.B, 20),
@@ -24,6 +25,7 @@ public class AppRunner {
                 new Pistachios(ActionLetter.G, 130)
         });
         coinAcceptor = new CoinAcceptor(100);
+        cashAcceptor = new CashAcceptor(100);
     }
 
     public static void run() {
@@ -37,12 +39,44 @@ public class AppRunner {
         print("В автомате доступны:");
         showProducts(products);
 
-        print("Монет на сумму: " + coinAcceptor.getAmount());
+        changePayment(changePaymentMenu());
 
         UniversalArray<Product> allowProducts = new UniversalArrayImpl<>();
         allowProducts.addAll(getAllowedProducts().toArray());
         chooseAction(allowProducts);
 
+    }
+
+    private int changePaymentMenu(){
+        print("Выберите способ оплаты");
+        print(" 1 - Оплата монетами\n" +
+                " 2 - Оплата наличными(купюрами)");
+        while (true){
+            try {
+                payment = new Scanner(System.in).nextInt();
+
+                if(payment < 0 || payment > 2){
+                    System.out.println("Просьба выбрать способ оплаты!");
+                    continue;
+                }
+                return payment;
+            }catch (InputMismatchException n){
+                n.getMessage();
+                System.out.println("Просьба выбрать способ оплаты!");
+            }
+        }
+    }
+
+    private void changePayment(int payment){
+        switch (payment){
+            case 1:
+                print("Монет на сумму: " + coinAcceptor.getAmount());
+                break;
+            case 2:
+            default:
+                print("Купюр на сумму: " + cashAcceptor.getCash());
+                break;
+        }
     }
 
     private UniversalArray<Product> getAllowedProducts() {
@@ -58,19 +92,30 @@ public class AppRunner {
     private void chooseAction(UniversalArray<Product> products) {
         print(" a - Пополнить баланс");
         showActions(products);
+
         print(" h - Выйти");
         String action = fromConsole().substring(0, 1);
         try {
             for (int i = 0; i < products.size(); i++) {
                 if (products.get(i).getActionLetter().equals(ActionLetter.valueOf(action.toUpperCase()))) {
-                    coinAcceptor.setAmount(coinAcceptor.getAmount() - products.get(i).getPrice());
+                    if(payment == 1){
+                        coinAcceptor.setAmount(coinAcceptor.getAmount() - products.get(i).getPrice());
+                    }else {
+                        cashAcceptor.setCash(cashAcceptor.getCash() - products.get(i).getPrice());
+                    }
+                    payment = 0;
                     print("Вы купили " + products.get(i).getName());
                     break;
                 } else if ("h".equalsIgnoreCase(action)) {
                     isExit = true;
                     break;
                 } else if ("a".equalsIgnoreCase(action)) {
-                    coinReplenishment();
+                    if(payment == 1){
+                        coinReplenishment();
+                    }else {
+                        cashReplenishment();
+                    }
+
                     break;
                 }
             }
@@ -111,7 +156,28 @@ public class AppRunner {
                 }
                 coinAcceptor.setAmount(coinAcceptor.getAmount() + actionSum);
                 break;
-            }catch (InputMismatchException | ArrayIndexOutOfBoundsException n){
+            }catch (InputMismatchException n){
+                n.getMessage();
+                System.out.println("Просьба ввести сумму: ");
+            }
+        }
+
+    }
+
+    private void cashReplenishment(){
+        print("Просьба ввести сумму монет которую хотите пополнить: ");
+
+        while (true){
+            try {
+                int actionSum = new Scanner(System.in).nextInt();
+
+                if(actionSum < 0){
+                    System.out.println("Ошибка сумма не может быть меньше чем 0!");
+                    continue;
+                }
+                cashAcceptor.setCash(cashAcceptor.getCash() + actionSum);
+                break;
+            }catch (InputMismatchException n){
                 n.getMessage();
                 System.out.println("Просьба ввести сумму: ");
             }
