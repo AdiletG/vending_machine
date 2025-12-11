@@ -3,6 +3,7 @@ import model.*;
 import util.UniversalArray;
 import util.UniversalArrayImpl;
 
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class AppRunner {
@@ -110,7 +111,7 @@ public class AppRunner {
                 }
                 coinAcceptor.setAmount(coinAcceptor.getAmount() + actionSum);
                 break;
-            }catch (NumberFormatException n){
+            }catch (InputMismatchException | ArrayIndexOutOfBoundsException n){
                 n.getMessage();
                 System.out.println("Просьба ввести сумму: ");
             }
