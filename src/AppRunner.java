@@ -55,6 +55,7 @@ public class AppRunner {
     }
 
     private void chooseAction(UniversalArray<Product> products) {
+        print(" a - Пополнить баланс");
         showActions(products);
         print(" h - Выйти");
         String action = fromConsole().substring(0, 1);
@@ -66,6 +67,9 @@ public class AppRunner {
                     break;
                 } else if ("h".equalsIgnoreCase(action)) {
                     isExit = true;
+                    break;
+                } else if ("a".equalsIgnoreCase(action)) {
+                    coinReplenishment();
                     break;
                 }
             }
@@ -91,6 +95,27 @@ public class AppRunner {
         for (int i = 0; i < products.size(); i++) {
             print(products.get(i).toString());
         }
+    }
+
+    private void coinReplenishment(){
+        print("Просьба ввести сумму монет которую хотите пополнить: ");
+
+        while (true){
+            try {
+                int actionSum = new Scanner(System.in).nextInt();
+
+                if(actionSum < 0){
+                    System.out.println("Ошибка сумма не может быть меньше чем 0!");
+                    continue;
+                }
+                coinAcceptor.setAmount(coinAcceptor.getAmount() + actionSum);
+                break;
+            }catch (NumberFormatException n){
+                n.getMessage();
+                System.out.println("Просьба ввести сумму: ");
+            }
+        }
+
     }
 
     private void print(String msg) {
